@@ -7,10 +7,10 @@ plain='\033[0m'
 
 cur_dir=$(pwd)
 
-# 检查root权限
-[[ $EUID -ne 0 ]] && echo -e "${red}错误：${plain} 请使用root权限运行此脚本 \n " && exit 1
+# check root
+[[ $EUID -ne 0 ]] && echo -e "${red}Fatal error: ${plain} Please run this script with root privilege \n " && exit 1
 
-# 检查操作系统并设置release变量
+# Check OS and set release variable
 if [[ -f /etc/os-release ]]; then
     source /etc/os-release
     release=$ID
@@ -18,12 +18,11 @@ elif [[ -f /usr/lib/os-release ]]; then
     source /usr/lib/os-release
     release=$ID
 else
-    echo "无法检测系统版本，请联系作者！" >&2
+    echo "Failed to check the system OS, please contact the author!" >&2
     exit 1
 fi
-echo "操作系统版本：$release"
+echo "The OS release is: $release"
 
-# 检测架构
 arch() {
     case "$(uname -m)" in
     x86_64 | x64 | amd64) echo 'amd64' ;;
@@ -33,68 +32,66 @@ arch() {
     armv6* | armv6) echo 'armv6' ;;
     armv5* | armv5) echo 'armv5' ;;
     s390x) echo 's390x' ;;
-    *) echo -e "${green}不支持的CPU架构！ ${plain}" && rm -f install.sh && exit 1 ;;
+    *) echo -e "${green}Unsupported CPU architecture! ${plain}" && rm -f install.sh && exit 1 ;;
     esac
 }
 
-echo "架构：$(arch)"
+echo "arch: $(arch)"
 
-# 检测操作系统版本号
 os_version=""
 os_version=$(grep "^VERSION_ID" /etc/os-release | cut -d '=' -f2 | tr -d '"' | tr -d '.')
 
-# 操作系统版本兼容性检查
 if [[ "${release}" == "arch" ]]; then
-    echo "你的系统是Arch Linux"
+    echo "Your OS is Arch Linux"
 elif [[ "${release}" == "parch" ]]; then
-    echo "你的系统是Parch Linux"
+    echo "Your OS is Parch Linux"
 elif [[ "${release}" == "manjaro" ]]; then
-    echo "你的系统是Manjaro"
+    echo "Your OS is Manjaro"
 elif [[ "${release}" == "armbian" ]]; then
-    echo "你的系统是Armbian"
+    echo "Your OS is Armbian"
 elif [[ "${release}" == "alpine" ]]; then
-    echo "你的系统是Alpine Linux"
+    echo "Your OS is Alpine Linux"
 elif [[ "${release}" == "opensuse-tumbleweed" ]]; then
-    echo "你的系统是OpenSUSE Tumbleweed"
+    echo "Your OS is OpenSUSE Tumbleweed"
 elif [[ "${release}" == "openEuler" ]]; then
     if [[ ${os_version} -lt 2203 ]]; then
-        echo -e "${red} 请使用OpenEuler 22.03或更高版本 ${plain}\n" && exit 1
+        echo -e "${red} Please use OpenEuler 22.03 or higher ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "centos" ]]; then
     if [[ ${os_version} -lt 8 ]]; then
-        echo -e "${red} 请使用CentOS 8或更高版本 ${plain}\n" && exit 1
+        echo -e "${red} Please use CentOS 8 or higher ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "ubuntu" ]]; then
     if [[ ${os_version} -lt 2004 ]]; then
-        echo -e "${red} 请使用Ubuntu 20.04或更高版本！${plain}\n" && exit 1
+        echo -e "${red} Please use Ubuntu 20 or higher version!${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "fedora" ]]; then
     if [[ ${os_version} -lt 36 ]]; then
-        echo -e "${red} 请使用Fedora 36或更高版本！${plain}\n" && exit 1
+        echo -e "${red} Please use Fedora 36 or higher version!${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "amzn" ]]; then
     if [[ ${os_version} != "2023" ]]; then
-        echo -e "${red} 请使用Amazon Linux 2023！${plain}\n" && exit 1
+        echo -e "${red} Please use Amazon Linux 2023!${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "debian" ]]; then
     if [[ ${os_version} -lt 11 ]]; then
-        echo -e "${red} 请使用Debian 11或更高版本 ${plain}\n" && exit 1
+        echo -e "${red} Please use Debian 11 or higher ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "almalinux" ]]; then
     if [[ ${os_version} -lt 80 ]]; then
-        echo -e "${red} 请使用AlmaLinux 8.0或更高版本 ${plain}\n" && exit 1
+        echo -e "${red} Please use AlmaLinux 8.0 or higher ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "rocky" ]]; then
     if [[ ${os_version} -lt 8 ]]; then
-        echo -e "${red} 请使用Rocky Linux 8或更高版本 ${plain}\n" && exit 1
+        echo -e "${red} Please use Rocky Linux 8 or higher ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "ol" ]]; then
     if [[ ${os_version} -lt 8 ]]; then
-        echo -e "${red} 请使用Oracle Linux 8或更高版本 ${plain}\n" && exit 1
+        echo -e "${red} Please use Oracle Linux 8 or higher ${plain}\n" && exit 1
     fi
 else
-    echo -e "${red}你的操作系统不支持此脚本。${plain}\n"
-    echo "请确保使用以下支持的操作系统之一："
+    echo -e "${red}Your operating system is not supported by this script.${plain}\n"
+    echo "Please ensure you are using one of the following supported operating systems:"
     echo "- Ubuntu 20.04+"
     echo "- Debian 11+"
     echo "- CentOS 8+"
@@ -112,7 +109,6 @@ else
     exit 1
 fi
 
-# 安装基础依赖
 install_base() {
     case "${release}" in
     ubuntu | debian | armbian)
@@ -136,14 +132,12 @@ install_base() {
     esac
 }
 
-# 生成随机字符串
 gen_random_string() {
     local length="$1"
     local random_string=$(LC_ALL=C tr -dc 'a-zA-Z0-9' </dev/urandom | fold -w "$length" | head -n 1)
     echo "$random_string"
 }
 
-# 安装后配置
 config_after_install() {
     local existing_username=$(/usr/local/x-ui/x-ui setting -show true | grep -Eo 'username: .+' | awk '{print $2}')
     local existing_password=$(/usr/local/x-ui/x-ui setting -show true | grep -Eo 'password: .+' | awk '{print $2}')
@@ -157,69 +151,66 @@ config_after_install() {
             local config_username=$(gen_random_string 10)
             local config_password=$(gen_random_string 10)
 
-            read -p "是否自定义面板端口设置？(不设置则使用随机端口) [y/n]: " config_confirm
+            read -p "Would you like to customize the Panel Port settings? (If not, a random port will be applied) [y/n]: " config_confirm
             if [[ "${config_confirm}" == "y" || "${config_confirm}" == "Y" ]]; then
-                read -p "请设置面板端口：" config_port
-                echo -e "${yellow}你的面板端口是：${config_port}${plain}"
+                read -p "Please set up the panel port: " config_port
+                echo -e "${yellow}Your Panel Port is: ${config_port}${plain}"
             else
                 local config_port=$(shuf -i 1024-62000 -n 1)
-                echo -e "${yellow}生成的随机端口：${config_port}${plain}"
+                echo -e "${yellow}Generated random port: ${config_port}${plain}"
             fi
 
             /usr/local/x-ui/x-ui setting -username "${config_username}" -password "${config_password}" -port "${config_port}" -webBasePath "${config_webBasePath}"
-            echo -e "这是全新安装，为安全起见生成随机登录信息："
+            echo -e "This is a fresh installation, generating random login info for security concerns:"
             echo -e "###############################################"
-            echo -e "${green}用户名：${config_username}${plain}"
-            echo -e "${green}密码：${config_password}${plain}"
-            echo -e "${green}端口：${config_port}${plain}"
-            echo -e "${green}WebBasePath：${config_webBasePath}${plain}"
-            echo -e "${green}访问地址：http://${server_ip}:${config_port}/${config_webBasePath}${plain}"
+            echo -e "${green}Username: ${config_username}${plain}"
+            echo -e "${green}Password: ${config_password}${plain}"
+            echo -e "${green}Port: ${config_port}${plain}"
+            echo -e "${green}WebBasePath: ${config_webBasePath}${plain}"
+            echo -e "${green}Access URL: http://${server_ip}:${config_port}/${config_webBasePath}${plain}"
             echo -e "###############################################"
-            echo -e "${yellow}如果忘记登录信息，可以输入 'x-ui settings' 查看${plain}"
+            echo -e "${yellow}If you forgot your login info, you can type 'x-ui settings' to check${plain}"
         else
             local config_webBasePath=$(gen_random_string 15)
-            echo -e "${yellow}WebBasePath缺失或过短，正在生成新的...${plain}"
+            echo -e "${yellow}WebBasePath is missing or too short. Generating a new one...${plain}"
             /usr/local/x-ui/x-ui setting -webBasePath "${config_webBasePath}"
-            echo -e "${green}新的WebBasePath：${config_webBasePath}${plain}"
-            echo -e "${green}访问地址：http://${server_ip}:${existing_port}/${config_webBasePath}${plain}"
+            echo -e "${green}New WebBasePath: ${config_webBasePath}${plain}"
+            echo -e "${green}Access URL: http://${server_ip}:${existing_port}/${config_webBasePath}${plain}"
         fi
     else
         if [[ "$existing_username" == "admin" && "$existing_password" == "admin" ]]; then
             local config_username=$(gen_random_string 10)
             local config_password=$(gen_random_string 10)
 
-            echo -e "${yellow}检测到默认凭据，需要进行安全更新...${plain}"
+            echo -e "${yellow}Default credentials detected. Security update required...${plain}"
             /usr/local/x-ui/x-ui setting -username "${config_username}" -password "${config_password}"
-            echo -e "生成新的随机登录凭据："
+            echo -e "Generated new random login credentials:"
             echo -e "###############################################"
-            echo -e "${green}用户名：${config_username}${plain}"
-            echo -e "${green}密码：${config_password}${plain}"
+            echo -e "${green}Username: ${config_username}${plain}"
+            echo -e "${green}Password: ${config_password}${plain}"
             echo -e "###############################################"
-            echo -e "${yellow}如果忘记登录信息，可以输入 'x-ui settings' 查看${plain}"
+            echo -e "${yellow}If you forgot your login info, you can type 'x-ui settings' to check${plain}"
         else
-            echo -e "${green}用户名、密码和WebBasePath已正确设置，退出配置...${plain}"
+            echo -e "${green}Username, Password, and WebBasePath are properly set. Exiting...${plain}"
         fi
     fi
 
     /usr/local/x-ui/x-ui migrate
 }
 
-# 安装x-ui
 install_x-ui() {
     cd /usr/local/
 
     if [ $# == 0 ]; then
-        # 使用 https://raw.fastgit.org/ 代理获取最新版本（注意：该代理可能仅支持raw文件，API可能不可用）
-        tag_version=$(curl -Ls "https://raw.fastgit.org/MHSanaei/3x-ui/main/package.json" | grep '"version":' | sed -E 's/.*"([^"]+)".*/\1/' | xargs -I {} echo "v{}")
-        if [[ ! -n "$tag_version" || "$tag_version" == "v" ]]; then
-            echo -e "${red}获取x-ui版本失败，可能是由于raw.fastgit.org代理限制，请尝试手动指定版本${plain}"
+        tag_version=$(curl -Ls "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        if [[ ! -n "$tag_version" ]]; then
+            echo -e "${red}Failed to fetch x-ui version, it may be due to GitHub API restrictions, please try it later${plain}"
             exit 1
         fi
-        echo -e "获取到x-ui最新版本：${tag_version}，开始安装..."
-        # 使用代理下载安装包
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz "https://raw.fastgit.org/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
+        echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."
+        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz https://github.com/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz
         if [[ $? -ne 0 ]]; then
-            echo -e "${red}下载x-ui失败，请检查raw.fastgit.org代理是否可用${plain}"
+            echo -e "${red}Downloading x-ui failed, please be sure that your server can access GitHub ${plain}"
             exit 1
         fi
     else
@@ -228,16 +219,15 @@ install_x-ui() {
         min_version="2.3.5"
 
         if [[ "$(printf '%s\n' "$min_version" "$tag_version_numeric" | sort -V | head -n1)" != "$min_version" ]]; then
-            echo -e "${red}请使用更新的版本（至少v2.3.5），退出安装。${plain}"
+            echo -e "${red}Please use a newer version (at least v2.3.5). Exiting installation.${plain}"
             exit 1
         fi
 
-        # 使用代理构建下载链接
-        url="https://raw.fastgit.org/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
-        echo -e "开始安装x-ui $1"
+        url="https://github.com/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
+        echo -e "Beginning to install x-ui $1"
         wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz ${url}
         if [[ $? -ne 0 ]]; then
-            echo -e "${red}下载x-ui $1失败，请检查代理服务或版本是否存在${plain}"
+            echo -e "${red}Download x-ui $1 failed, please check if the version exists ${plain}"
             exit 1
         fi
     fi
@@ -252,7 +242,7 @@ install_x-ui() {
     cd x-ui
     chmod +x x-ui
 
-    # 根据架构重命名文件
+    # Check the system's architecture and rename the file accordingly
     if [[ $(arch) == "armv5" || $(arch) == "armv6" || $(arch) == "armv7" ]]; then
         mv bin/xray-linux-$(arch) bin/xray-linux-arm
         chmod +x bin/xray-linux-arm
@@ -260,8 +250,7 @@ install_x-ui() {
 
     chmod +x x-ui bin/xray-linux-$(arch)
     cp -f x-ui.service /etc/systemd/system/
-    # 使用代理下载x-ui.sh脚本
-    wget --no-check-certificate -O /usr/bin/x-ui "https://raw.fastgit.org/MHSanaei/3x-ui/main/x-ui.sh"
+    wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/MHSanaei/3x-ui/main/x-ui.sh
     chmod +x /usr/local/x-ui/x-ui.sh
     chmod +x /usr/bin/x-ui
     config_after_install
@@ -269,28 +258,28 @@ install_x-ui() {
     systemctl daemon-reload
     systemctl enable x-ui
     systemctl start x-ui
-    echo -e "${green}x-ui ${tag_version}${plain} 安装完成，已启动..."
+    echo -e "${green}x-ui ${tag_version}${plain} installation finished, it is running now..."
     echo -e ""
-    echo -e "x-ui控制菜单使用方法："
+    echo -e "x-ui control menu usages: "
     echo -e "----------------------------------------------"
-    echo -e "子命令："
-    echo -e "x-ui              - 管理脚本入口"
-    echo -e "x-ui start        - 启动服务"
-    echo -e "x-ui stop         - 停止服务"
-    echo -e "x-ui restart      - 重启服务"
-    echo -e "x-ui status       - 查看状态"
-    echo -e "x-ui settings     - 查看设置"
-    echo -e "x-ui enable       - 开机自启"
-    echo -e "x-ui disable      - 关闭开机自启"
-    echo -e "x-ui log          - 查看日志"
-    echo -e "x-ui banlog       - 查看Fail2ban封禁日志"
-    echo -e "x-ui update       - 更新程序"
-    echo -e "x-ui legacy       - 安装旧版本"
-    echo -e "x-ui install      - 安装程序"
-    echo -e "x-ui uninstall    - 卸载程序"
+    echo -e "SUBCOMMANDS:"
+    echo -e "x-ui              - Admin Management Script"
+    echo -e "x-ui start        - Start"
+    echo -e "x-ui stop         - Stop"
+    echo -e "x-ui restart      - Restart"
+    echo -e "x-ui status       - Current Status"
+    echo -e "x-ui settings     - Current Settings"
+    echo -e "x-ui enable       - Enable Autostart on OS Startup"
+    echo -e "x-ui disable      - Disable Autostart on OS Startup"
+    echo -e "x-ui log          - Check logs"
+    echo -e "x-ui banlog       - Check Fail2ban ban logs"
+    echo -e "x-ui update       - Update"
+    echo -e "x-ui legacy       - legacy version"
+    echo -e "x-ui install      - Install"
+    echo -e "x-ui uninstall    - Uninstall"
     echo -e "----------------------------------------------"
 }
 
-echo -e "${green}正在运行...${plain}"
+echo -e "${green}Running...${plain}"
 install_base
 install_x-ui $1
