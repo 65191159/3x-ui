@@ -209,17 +209,17 @@ install_x-ui() {
     cd /usr/local/
 
     if [ $# == 0 ]; then
-        # 使用 https://gh.api.99988866.xyz/ 代理获取最新版本
-        tag_version=$(curl -Ls "https://gh.api.99988866.xyz/https://api.github.com/repos/MHSanaei/3x-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        if [[ ! -n "$tag_version" ]]; then
-            echo -e "${red}获取x-ui版本失败，可能是由于代理服务不可用，请检查或更换代理${plain}"
+        # 使用 https://raw.fastgit.org/ 代理获取最新版本（注意：该代理可能仅支持raw文件，API可能不可用）
+        tag_version=$(curl -Ls "https://raw.fastgit.org/MHSanaei/3x-ui/main/package.json" | grep '"version":' | sed -E 's/.*"([^"]+)".*/\1/' | xargs -I {} echo "v{}")
+        if [[ ! -n "$tag_version" || "$tag_version" == "v" ]]; then
+            echo -e "${red}获取x-ui版本失败，可能是由于raw.fastgit.org代理限制，请尝试手动指定版本${plain}"
             exit 1
         fi
         echo -e "获取到x-ui最新版本：${tag_version}，开始安装..."
         # 使用代理下载安装包
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz "https://gh.api.99988866.xyz/https://github.com/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
+        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz "https://raw.fastgit.org/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
         if [[ $? -ne 0 ]]; then
-            echo -e "${red}下载x-ui失败，请检查代理服务是否正常${plain}"
+            echo -e "${red}下载x-ui失败，请检查raw.fastgit.org代理是否可用${plain}"
             exit 1
         fi
     else
@@ -233,7 +233,7 @@ install_x-ui() {
         fi
 
         # 使用代理构建下载链接
-        url="https://gh.api.99988866.xyz/https://github.com/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
+        url="https://raw.fastgit.org/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
         echo -e "开始安装x-ui $1"
         wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch).tar.gz ${url}
         if [[ $? -ne 0 ]]; then
@@ -261,7 +261,7 @@ install_x-ui() {
     chmod +x x-ui bin/xray-linux-$(arch)
     cp -f x-ui.service /etc/systemd/system/
     # 使用代理下载x-ui.sh脚本
-    wget --no-check-certificate -O /usr/bin/x-ui "https://gh.api.99988866.xyz/https://raw.githubusercontent.com/MHSanaei/3x-ui/main/x-ui.sh"
+    wget --no-check-certificate -O /usr/bin/x-ui "https://raw.fastgit.org/MHSanaei/3x-ui/main/x-ui.sh"
     chmod +x /usr/local/x-ui/x-ui.sh
     chmod +x /usr/bin/x-ui
     config_after_install
